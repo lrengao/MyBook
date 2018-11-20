@@ -1,0 +1,40 @@
+from app.libs.Http import HTTP
+from flask import current_app
+
+class YuShuBook:
+    isbn_url = 'http://t.yushu.im/v2/book/isbn/{}'
+    keyword_api = 'http://t.yushu.im/v2/book/search?q={}&count={}&start={}'
+
+    def __init__(self):
+        self.total = 0
+        self.books = []
+
+
+    def search_by_isbn(self,q):
+        url = self.isbn_url.format(q)
+        result = HTTP.get(url)
+        self.__fill_single(result)
+
+
+    def __fill_single(self,data):
+        if data:
+            self.total = 1
+            self.books.append(data)
+
+
+    def __fill_more(self,data):
+        self.total = data['total']
+        self.books = data['books']
+
+    def search_by_keyword(self,keyword,page=1):
+        url = self.keyword_api.format(keyword,current_app.config['PER_PAGE'],self.calculate_start(page))
+        result = HTTP.get(url)
+        self.__fill_more(result)
+
+
+    def calculate_start(self,page):
+        return (page-1)*current_app.config['PER_PAGE']
+
+    @property
+    def first(self):
+        return self.books[0] if len(self.books)>=1 else None
